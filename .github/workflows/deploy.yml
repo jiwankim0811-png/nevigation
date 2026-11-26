@@ -1,0 +1,76 @@
+name: Deploy Cloud Run Service
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'fasion/server/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: thetime-1
+  REGION: us-central1
+  SERVICE_NAME: nevigation-server
+
+jobs:
+  deploy:
+    name: Build & Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          source: ./fasion/server
+          env_vars: |
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          flags: '--allow-unauthenticated'
+
+      - name: Smoke Test (Verify 200 OK)
+        run: |
+          SERVICE_URL="${{ steps.deploy.outputs.url }}"
+          echo "Deployed Service URL: $SERVICE_URL"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL/health")
+          echo "Health check endpoint ($SERVICE_URL/health) returned HTTP $HTTP_CODE"
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "Smoke test failed! Expected HTTP 200, got $HTTP_CODE"
+            exit 1
+          fi
+          echo "Smoke test passed successfully!"
+
+      - name: Register URL to GAS Properties
+        if: success()
+        env:
+          GAS_WEBHOOK_URL: ${{ secrets.GAS_WEBHOOK_URL }}
+        run: |
+          if [ -n "$GAS_WEBHOOK_URL" ]; then
+            SERVICE_URL="${{ steps.deploy.outputs.url }}"
+            echo "Syncing Cloud Run URL to Google Apps Script webhook..."
+            curl -s -X POST -L \
+              -H "Content-Type: application/json" \
+              -d "{\"serviceName\": \"${{ env.SERVICE_NAME }}\", \"serviceUrl\": \"$SERVICE_URL\"}" \
+              "$GAS_WEBHOOK_URL"
+            echo "URL sync complete."
+          else
+            echo "GAS_WEBHOOK_URL secret not set. Skipping sync."
+          fi

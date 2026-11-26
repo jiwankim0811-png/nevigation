@@ -1,0 +1,30 @@
+# Virtual Environment
+algorithm-class-env/
+venv/
+.venv/
+env/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment variables & Credentials
+.env
+.env.*
+*.env
+.clasprc.json
+
+# Logs
+*.log
+
+# IDE & Editor files
+.idea/
+.vscode/
+.DS_Store
+*.swp

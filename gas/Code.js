@@ -3,6 +3,14 @@
  */
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.setServiceUrl) {
+    PropertiesService.getScriptProperties().setProperty('BACKEND_SERVICE_URL', e.parameter.setServiceUrl);
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'success',
+      message: 'Backend URL updated in script properties: ' + e.parameter.setServiceUrl
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
   return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('다익스트라 알고리즘 길찾기 시각화 시뮬레이터 (GraphFlow v2.4 Core)')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
@@ -49,7 +57,10 @@ function doPost(e) {
  * 프론트엔드에서 google.script.run.getSimulationData(...) 로 직접 호출 가능한 함수
  */
 function getSimulationData(payload) {
-  const backendUrl = PropertiesService.getScriptProperties().getProperty('BACKEND_SERVICE_URL');
+  let backendUrl = PropertiesService.getScriptProperties().getProperty('BACKEND_SERVICE_URL');
+  if (!backendUrl) {
+    backendUrl = 'https://nevigation-server-epaw6mtefq-uc.a.run.app';
+  }
 
   // 1. 외부 FastAPI 백엔드가 등록되어 있다면 호출 시도
   if (backendUrl) {

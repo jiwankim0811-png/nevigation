@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html class="dark" lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>다익스트라 알고리즘 길찾기 시각화 시뮬레이터 (GraphFlow v2.4 Core)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..900&family=Space+Grotesk:wght@100..900&display=swap" rel="stylesheet"/>
+  <style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+      main > :first-child { margin-top: 0 !important; }
+      main > :last-child { margin-bottom: 0 !important; }
+    }
+    ::-webkit-scrollbar { display: none; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .grotesk { font-family: 'Space Grotesk', sans-serif; }
+    .geist { font-family: 'Geist', sans-serif; }
+    .pulse-glow {
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);
+    }
+    .settled-glow {
+      box-shadow: 0 0 14px rgba(78, 222, 163, 0.35);
+    }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-dim": "#0d1322",
+            "surface": "#0d1322",
+            "surface-bright": "#33394a",
+            "surface-container-lowest": "#080e1d",
+            "surface-container-low": "#151b2b",
+            "surface-container": "#191f2f",
+            "surface-container-high": "#242a3a",
+            "surface-container-highest": "#2f3445",
+            "on-surface": "#dde2f8",
+            "on-surface-variant": "#bdc8d1",
+            "outline": "#87929a",
+            "outline-variant": "#3e484f",
+            "primary": "#8ed5ff",
+            "primary-container": "#38bdf8",
+            "on-primary": "#00354a",
+            "on-primary-container": "#004965",
+            "secondary": "#4edea3",
+            "secondary-container": "#00a572",
+            "on-secondary": "#003824",
+            "on-secondary-container": "#00311f",
+            "tertiary": "#ffc174",
+            "tertiary-container": "#f59e0b",
+            "on-tertiary": "#472a00",
+            "on-tertiary-container": "#613b00",
+            "error": "#ffb4ab",
+            "error-container": "#93000a",
+            "background": "#0d1322",
+            "on-background": "#dde2f8"
+          },
+          fontFamily: {
+            "headline-lg": ["Space Grotesk", "sans-serif"],
+            "headline-sm": ["Space Grotesk", "sans-serif"],
+            "body-md": ["Geist", "sans-serif"],
+            "code-inline": ["JetBrains Mono", "monospace"],
+            "label-sm": ["JetBrains Mono", "monospace"],
+            "label-md": ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-surface font-body-md text-on-surface min-h-screen selection:bg-primary selection:text-on-primary">
+
+  <!-- Fixed Top Header -->
+  <header class="fixed top-0 left-0 right-0 w-full z-50 bg-surface/90 backdrop-blur-xl border-b border-surface-container-high">
+    <div class="h-16 w-full px-6 flex items-center justify-between gap-4">
+      <!-- Logo & Engine Badge -->
+      <div class="flex items-center gap-6">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shadow">
+            <span class="material-symbols-outlined text-[22px]">hub</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="font-headline-sm text-lg text-on-surface tracking-tight uppercase font-bold">GraphFlow</span>
+            <span class="font-label-sm text-xs text-on-surface-variant">v2.4 Core • Dijkstra Engine</span>
+          </div>
+        </div>
+
+        <div class="hidden xl:flex items-center gap-2 px-3 py-1 bg-surface-container rounded-lg border border-surface-container-high text-xs font-label-sm">
+          <span class="inline-flex items-center gap-1.5 text-secondary">
+            <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+            <span id="conn-status-label">READY</span>
+          </span>
+          <span class="text-outline-variant">•</span>
+          <span class="text-primary font-code-inline" id="source-badge">Engine Loaded</span>
+        </div>
+      </div>
+
+      <!-- Route Selector & Transport Controls -->
+      <div class="flex items-center gap-3 flex-wrap">
+        <!-- Start / End Node Select -->
+        <div class="flex items-center gap-1.5 px-3 py-1 bg-surface-container-low rounded-xl border border-surface-container-high text-xs">
+          <span class="text-on-surface-variant font-label-sm">출발:</span>
+          <select id="select-start" class="bg-surface-container text-primary font-bold rounded px-1.5 py-0.5 border border-outline-variant focus:outline-none cursor-pointer">
+            <option value="A" selected>강남역 (A)</option>
+            <option value="B">양재역 (B)</option>
+            <option value="C">우면산로 (C)</option>
+            <option value="D">양재시민숲 (D)</option>
+            <option value="F">청계산입구 (F)</option>
+            <option value="H">대왕판교 (H)</option>
+            <option value="E">판교역 (E)</option>
+            <option value="J">정자역 (J)</option>
+          </select>
+          <span class="material-symbols-outlined text-outline text-[16px]">arrow_forward</span>
+          <span class="text-on-surface-variant font-label-sm">도착:</span>
+          <select id="select-end" class="bg-surface-container text-secondary font-bold rounded px-1.5 py-0.5 border border-outline-variant focus:outline-none cursor-pointer">
+            <option value="G" selected>테크노밸리 (G)</option>
+            <option value="E">판교역 (E)</option>
+            <option value="J">정자역 (J)</option>
+            <option value="D">양재시민숲 (D)</option>
+            <option value="B">양재역 (B)</option>
+          </select>
+        </div>
+
+        <!-- Metric Switcher -->
+        <div class="flex items-center bg-surface-container-lowest p-0.5 rounded-lg border border-surface-container-high text-xs font-label-sm">
+          <button id="btn-metric-dist" class="px-2.5 py-1 rounded bg-primary-container text-on-primary-container font-bold transition-all">거리 (km)</button>
+          <button id="btn-metric-time" class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface transition-all">시간 (분)</button>
+        </div>
+
+        <!-- Transport Buttons -->
+        <div class="flex items-center gap-1 bg-surface-container px-2 py-1 rounded-xl shadow border border-surface-container-high">
+          <button id="btn-run" class="flex items-center gap-1 px-3 py-1 bg-primary text-on-primary rounded font-label-md text-xs font-bold hover:brightness-110 active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-[16px]">play_arrow</span>
+            <span>시작</span>
+          </button>
+          <button id="btn-pause" class="flex items-center gap-1 px-2.5 py-1 bg-surface-container-high text-on-surface rounded font-label-md text-xs hover:bg-surface-container-highest active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-[16px]">pause</span>
+            <span>정지</span>
+          </button>
+          <button id="btn-step" class="flex items-center gap-1 px-2.5 py-1 bg-surface-container-high text-tertiary rounded font-label-md text-xs hover:bg-surface-container-highest active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-[16px]">skip_next</span>
+            <span>단계실행</span>
+          </button>
+          <button id="btn-reset" class="flex items-center gap-1 px-2 py-1 bg-surface-container-low text-on-surface-variant rounded font-label-md text-xs hover:text-error hover:bg-surface-container-high active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-[16px]">restart_alt</span>
+            <span>초기화</span>
+          </button>
+        </div>
+
+        <!-- Speed Selector -->
+        <div class="flex items-center p-0.5 bg-surface-container-lowest rounded-lg border border-surface-container-high text-xs font-label-sm">
+          <button data-speed="0.5" class="btn-speed px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface">0.5x</button>
+          <button data-speed="1.0" class="btn-speed px-1.5 py-0.5 rounded bg-surface-container-high text-primary font-bold">1x</button>
+          <button data-speed="2.0" class="btn-speed px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface">2x</button>
+          <button data-speed="5.0" class="btn-speed px-1.5 py-0.5 rounded text-on-surface-variant hover:text-on-surface">5x</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Stage -->
+  <main class="w-full pt-16 bg-surface min-h-[calc(100vh-64px)] pb-10">
+
+    <!-- Sub-Header Live Telemetry Bar -->
+    <div class="w-full bg-surface-container-low px-6 py-2 border-b border-surface-container-high flex flex-wrap items-center justify-between gap-4 text-xs font-label-sm">
+      <div class="flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-1.5 bg-surface-container px-3 py-1 rounded-full shadow-inner border border-surface-container-high">
+          <span class="w-2 h-2 rounded-full bg-secondary"></span>
+          <span class="text-on-surface font-semibold" id="current-step-display">Step #0</span>
+          <span class="text-outline-variant">•</span>
+          <span class="text-tertiary font-bold" id="current-phase-display">초기화 (INIT)</span>
+        </div>
+        <div class="flex items-center gap-1.5 bg-surface-container px-3 py-1 rounded-full text-on-surface-variant border border-surface-container-high">
+          <span class="material-symbols-outlined text-[15px] text-primary">timer</span>
+          <span>누적 지연시간:</span>
+          <span class="text-primary font-code-inline font-bold" id="metric-latency">0.0 μs</span>
+        </div>
+        <div class="flex items-center gap-1.5 bg-surface-container px-3 py-1 rounded-full text-on-surface-variant border border-surface-container-high">
+          <span class="material-symbols-outlined text-[15px] text-secondary">memory</span>
+          <span>누적 연산수:</span>
+          <span class="text-secondary font-code-inline font-bold" id="metric-ops">0 ops</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <span class="text-on-surface-variant">이론적 시간복잡도:</span>
+        <span class="px-2 py-0.5 rounded bg-surface-container text-primary font-code-inline font-bold border border-primary/20">O((V + E) log V)</span>
+      </div>
+    </div>
+
+    <!-- 1. Primary Interactive Map Canvas Stage -->
+    <div class="w-full px-6 py-4">
+      <div class="relative w-full rounded-2xl bg-surface-container-low overflow-hidden shadow-2xl border border-surface-container-high">
+
+        <!-- Map Header Overlay -->
+        <div class="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 bg-surface-container-low/90 backdrop-blur-md border-b border-surface-container-high/60">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[20px]">explore</span>
+            <span class="font-headline-sm text-sm text-on-surface font-semibold">수도권 남부 간선 네비게이션 경로 탐색 뷰</span>
+            <span class="px-2 py-0.5 rounded-full bg-primary/20 text-primary font-label-sm text-[10px] font-bold">REAL-TIME GPS ROUTING</span>
+          </div>
+
+          <div class="hidden sm:flex items-center gap-4 text-xs font-label-sm text-on-surface-variant">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>확정 최단경로</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span>현재 평가 중</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-primary"></span>이완 간선</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#87929a]"></span>대기/미탐색</span>
+          </div>
+        </div>
+
+        <!-- SVG Map Network Stage -->
+        <div class="relative w-full h-[380px] md:h-[440px] bg-surface-container-lowest overflow-hidden flex items-center justify-center">
+          <!-- Background Road Grid Pattern -->
+          <svg class="absolute inset-0 w-full h-full opacity-15 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern height="40" id="city-grid" patternunits="userSpaceOnUse" width="40">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#87929a" stroke-width="0.75"></path>
+              </pattern>
+            </defs>
+            <rect fill="url(#city-grid)" height="100%" width="100%"></rect>
+          </svg>
+
+          <!-- Main SVG Graph Vectors -->
+          <svg id="svg-map" class="absolute inset-0 w-full h-full z-10" preserveAspectRatio="xMidYMid slice" viewBox="0 0 1200 440">
+            <!-- Road Base Lines (Dynamic Edges Container) -->
+            <g id="svg-edges-base" fill="none" stroke="#242a3a" stroke-linecap="round" stroke-linejoin="round" stroke-width="6"></g>
+
+            <!-- Active / Relaxing Edges -->
+            <g id="svg-edges-active" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+
+            <!-- Settled Optimal Path Edges -->
+            <g id="svg-edges-settled" fill="none" stroke="#4edea3" stroke-linecap="round" stroke-linejoin="round" stroke-width="6" opacity="0.95"></g>
+            <g id="svg-edges-pulse" fill="none" stroke="#ffffff" stroke-dasharray="8,16" stroke-linecap="round" stroke-width="2" opacity="0.8"></g>
+
+            <!-- Edge Distance Badges -->
+            <g id="svg-edge-badges" font-family="JetBrains Mono" font-size="11" font-weight="600" text-anchor="middle"></g>
+
+            <!-- Node Points -->
+            <g id="svg-nodes" font-family="Space Grotesk"></g>
+
+            <!-- Vehicle / Dynamic GPS Marker -->
+            <g id="svg-vehicle" transform="translate(120, 180)" class="transition-all duration-300">
+              <circle fill="#38bdf8" r="9" class="animate-ping opacity-60"></circle>
+              <circle fill="#38bdf8" r="7" stroke="#ffffff" stroke-width="1.5"></circle>
+              <polygon fill="#00354a" points="0,-9 4,-2 -4,-2"></polygon>
+            </g>
+          </svg>
+
+          <!-- Floating Active Routing HUD -->
+          <div class="absolute bottom-4 right-4 z-20 bg-surface-container-high/95 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-surface-container-highest max-w-xs w-full text-xs">
+            <div class="flex items-center justify-between pb-1.5 border-b border-surface-container">
+              <span class="font-label-sm text-primary flex items-center gap-1 font-bold">
+                <span class="material-symbols-outlined text-[16px]">navigation</span>
+                ACTIVE ROUTING HUD
+              </span>
+              <span class="font-label-sm text-secondary font-code-inline font-bold" id="hud-progress-text">0% 진행</span>
+            </div>
+            <div class="w-full bg-surface-container-lowest h-2 rounded-full overflow-hidden my-2 border border-surface-container">
+              <div id="hud-progress-bar" class="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-2">
+              <div class="bg-surface-container p-2 rounded-lg border border-surface-container-high">
+                <span class="text-on-surface-variant block text-[10px]">최적거리 / 시간</span>
+                <span class="text-base text-on-surface font-code-inline font-bold" id="hud-distance">-</span>
+              </div>
+              <div class="bg-surface-container p-2 rounded-lg border border-surface-container-high">
+                <span class="text-on-surface-variant block text-[10px]">현재 탐색 노드</span>
+                <span class="text-base text-primary font-code-inline font-bold" id="hud-current-node">-</span>
+              </div>
+            </div>
+            <div class="mt-2 p-2 bg-surface-container-lowest rounded-lg flex items-center gap-2 border border-surface-container">
+              <span class="material-symbols-outlined text-tertiary text-[18px]">turn_sharp_right</span>
+              <div class="truncate">
+                <span class="text-[10px] text-on-surface-variant block truncate">현재 동작 안내</span>
+                <span class="font-label-md text-on-surface font-semibold truncate block" id="hud-next-action">시작 버튼을 눌러 탐색을 시작하세요</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Dual Analytical Panels (Left: Histogram & Terminal / Right: Min-Heap & Distance Table) -->
+    <div class="w-full px-6 grid grid-cols-1 lg:grid-cols-12 gap-6 pb-6">
+
+      <!-- LEFT PANEL: Topology, Step Histogram & Terminal (6 Cols) -->
+      <div class="lg:col-span-6 flex flex-col gap-6">
+
+        <!-- Card: Step Histogram Chart (요구사항: 단계별 히스토그램 데이터 시각화) -->
+        <div class="bg-surface-container-low rounded-2xl p-5 shadow-xl border border-surface-container-high flex flex-col gap-4">
+          <div class="flex items-center justify-between pb-2 border-b border-surface-container">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary text-[20px]">bar_chart</span>
+              <span class="font-headline-sm text-base text-on-surface font-bold">단계별 상태 히스토그램 (Step Histogram)</span>
+            </div>
+            <span class="font-label-sm text-xs text-secondary font-code-inline" id="hist-finite-count">0 / 9 노드 도달</span>
+          </div>
+
+          <!-- Histogram Distribution Bins Chart -->
+          <div class="bg-surface-container-lowest p-4 rounded-xl border border-surface-container">
+            <span class="font-label-sm text-xs text-on-surface-variant block mb-2 font-semibold">최단거리 구간별 노드 빈도수 (Distance Distribution Bins)</span>
+            <div id="histogram-bins-container" class="grid grid-cols-6 gap-2 h-28 items-end pt-2 pb-1 border-b border-surface-container">
+              <!-- Rendered via JS -->
+            </div>
+            <div id="histogram-labels-container" class="grid grid-cols-6 gap-2 text-center text-[10px] text-on-surface-variant font-label-sm mt-1">
+              <!-- Labels -->
+            </div>
+          </div>
+
+          <!-- Node-by-Node Distance Bars Breakdown -->
+          <div class="bg-surface-container-lowest p-4 rounded-xl border border-surface-container">
+            <span class="font-label-sm text-xs text-on-surface-variant block mb-2 font-semibold">개별 노드 최단거리 현황 (Per-Node Tentative Distance)</span>
+            <div id="node-bars-container" class="space-y-2">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Step Pseudocode Terminal Box -->
+          <div class="p-3 bg-surface-container-lowest rounded-xl border border-surface-container">
+            <div class="flex items-center justify-between pb-1 text-xs">
+              <span class="font-label-sm text-tertiary font-code-inline font-bold" id="terminal-step-badge">Execution Step #0</span>
+              <span class="font-label-sm text-on-surface-variant font-code-inline" id="terminal-ops-badge">Time Complexity: O(log V)</span>
+            </div>
+            <div class="font-code-inline text-xs text-on-surface bg-surface-container-low p-2.5 rounded border border-surface-container-high leading-relaxed mt-1" id="terminal-code-body">
+              <span class="text-secondary font-bold">> Dijkstra Algorithm Ready.</span><br/>
+              <span class="text-on-surface-variant">> 출발 노드를 설정하고 '시작' 또는 '단계실행'을 누르세요.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL: Min-Heap Ribbon & Distance Vector Table (6 Cols) -->
+      <div class="lg:col-span-6 flex flex-col gap-6">
+
+        <div class="bg-surface-container-low rounded-2xl p-5 shadow-xl border border-surface-container-high flex flex-col gap-4">
+          <!-- Priority Queue (Min-Heap) Section -->
+          <div class="flex items-center justify-between pb-2 border-b border-surface-container">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-secondary text-[20px]">table_chart</span>
+              <span class="font-headline-sm text-base text-on-surface font-bold">우선순위 큐(Min-Heap) & 최단거리 벡터</span>
+            </div>
+            <span class="px-2 py-0.5 rounded bg-surface-container font-label-sm text-xs text-primary font-code-inline border border-primary/20">Min-Heap Array</span>
+          </div>
+
+          <!-- Min-Heap Live Visual Ribbon -->
+          <div class="bg-surface-container-lowest p-3 rounded-xl border border-surface-container">
+            <span class="font-label-sm text-xs text-on-surface-variant block mb-2 font-semibold">현재 최소 힙 (Priority Queue Elements: [Node, Dist, Prev])</span>
+            <div id="heap-ribbon-container" class="flex items-center gap-2 overflow-x-auto py-1.5 min-h-[48px]">
+              <span class="text-xs text-outline font-label-sm">힙이 비어 있습니다.</span>
+            </div>
+          </div>
+
+          <!-- Distance Vector Table -->
+          <div class="w-full bg-surface-container-lowest rounded-xl overflow-hidden border border-surface-container shadow-inner">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-surface-container-high text-on-surface-variant font-label-sm font-semibold border-b border-surface-container">
+                  <th class="py-2.5 px-3">노드 (ID)</th>
+                  <th class="py-2.5 px-3">최단거리 d[v]</th>
+                  <th class="py-2.5 px-3">이전 노드 p[v]</th>
+                  <th class="py-2.5 px-3">상태 (Status)</th>
+                  <th class="py-2.5 px-3 text-right">경로 추적 (Path)</th>
+                </tr>
+              </thead>
+              <tbody id="distance-table-body" class="font-code-inline divide-y divide-surface-container">
+                <!-- Rendered dynamically via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Educational Telemetry Metrics Deck (4 Cards) -->
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Card 1: Exploration Progress -->
+          <div class="bg-surface-container-low p-4 rounded-xl border border-surface-container-high shadow-lg flex flex-col justify-between">
+            <div class="flex items-center justify-between pb-1">
+              <span class="font-label-sm text-xs text-on-surface-variant font-semibold">방문 확정 노드</span>
+              <span class="material-symbols-outlined text-secondary text-[18px]">verified</span>
+            </div>
+            <div class="flex items-baseline gap-2 my-1">
+              <span id="telemetry-settled" class="font-headline-lg text-2xl text-secondary font-code-inline font-bold">0 / 9</span>
+              <span id="telemetry-settled-pct" class="font-label-sm text-xs text-on-surface-variant font-code-inline">(0%)</span>
+            </div>
+            <div class="w-full bg-surface-container-lowest h-1.5 rounded-full overflow-hidden mt-1">
+              <div id="telemetry-settled-bar" class="bg-secondary h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- Card 2: Edge Relaxation Counter -->
+          <div class="bg-surface-container-low p-4 rounded-xl border border-surface-container-high shadow-lg flex flex-col justify-between">
+            <div class="flex items-center justify-between pb-1">
+              <span class="font-label-sm text-xs text-on-surface-variant font-semibold">간선 이완 (Relaxation)</span>
+              <span class="material-symbols-outlined text-tertiary text-[18px]">dynamic_form</span>
+            </div>
+            <div class="flex items-baseline gap-2 my-1">
+              <span id="telemetry-relaxed-count" class="font-headline-lg text-2xl text-tertiary font-code-inline font-bold">0 회</span>
+              <span id="telemetry-relaxed-badge" class="font-label-sm text-[10px] text-tertiary font-code-inline">d[u]+w &lt; d[v]</span>
+            </div>
+            <span class="font-label-sm text-[10px] text-on-surface-variant">거리 갱신 성공 누적</span>
+          </div>
+
+          <!-- Card 3: Execution Time per Step -->
+          <div class="bg-surface-container-low p-4 rounded-xl border border-surface-container-high shadow-lg flex flex-col justify-between">
+            <div class="flex items-center justify-between pb-1">
+              <span class="font-label-sm text-xs text-on-surface-variant font-semibold">스텝 계산 시간</span>
+              <span class="material-symbols-outlined text-primary text-[18px]">timer</span>
+            </div>
+            <div class="flex items-baseline gap-2 my-1">
+              <span id="telemetry-step-time" class="font-headline-lg text-2xl text-primary font-code-inline font-bold">0.00</span>
+              <span class="font-label-sm text-xs text-primary font-code-inline">μs</span>
+            </div>
+            <span class="font-label-sm text-[10px] text-on-surface-variant font-code-inline">연산 지연시간 측정</span>
+          </div>
+
+          <!-- Card 4: Memory Complexity & Queue Size -->
+          <div class="bg-surface-container-low p-4 rounded-xl border border-surface-container-high shadow-lg flex flex-col justify-between">
+            <div class="flex items-center justify-between pb-1">
+              <span class="font-label-sm text-xs text-on-surface-variant font-semibold">우선순위 큐 크기</span>
+              <span class="material-symbols-outlined text-on-surface text-[18px]">memory</span>
+            </div>
+            <div class="flex items-baseline gap-2 my-1">
+              <span id="telemetry-queue-size" class="font-headline-lg text-2xl text-on-surface font-code-inline font-bold">0 nodes</span>
+              <span class="font-label-sm text-xs text-secondary font-code-inline">O(V)</span>
+            </div>
+            <span class="font-label-sm text-[10px] text-on-surface-variant font-code-inline">최대 힙 메모리 공간</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Interactive Simulator Client Logic -->
+  <script>
+    (function () {
+      // 1. Graph Data Definition
+      const DEFAULT_NODES = {
+        "A": { name: "강남역", x: 120, y: 180 },
+        "B": { name: "양재역", x: 290, y: 120 },
+        "C": { name: "우면산로", x: 260, y: 290 },
+        "D": { name: "양재시민숲", x: 480, y: 230 },
+        "F": { name: "청계산입구", x: 520, y: 110 },
+        "H": { name: "대왕판교", x: 440, y: 350 },
+        "E": { name: "판교역", x: 780, y: 150 },
+        "J": { name: "정자역", x: 740, y: 310 },
+        "G": { name: "테크노밸리", x: 1050, y: 210 }
+      };
+
+      const DEFAULT_EDGES = [
+        { from: "A", to: "B", dist: 3.2, time: 5.0, road: "강남대로" },
+        { from: "A", to: "C", dist: 4.8, time: 8.0, road: "우면산로" },
+        { from: "B", to: "F", dist: 6.5, time: 10.0, road: "청계산로" },
+        { from: "B", to: "D", dist: 2.1, time: 3.0, road: "매헌로" },
+        { from: "C", to: "D", dist: 3.0, time: 5.0, road: "양재대로" },
+        { from: "C", to: "H", dist: 5.2, time: 7.0, road: "대왕판교로" },
+        { from: "F", to: "E", dist: 5.5, time: 9.0, road: "신분당선" },
+        { from: "D", to: "E", dist: 4.0, time: 6.0, road: "경부간선" },
+        { from: "D", to: "J", dist: 6.0, time: 8.0, road: "분당내곡간" },
+        { from: "H", to: "J", dist: 4.5, time: 6.0, road: "판교원로" },
+        { from: "E", to: "G", dist: 3.4, time: 5.0, road: "테크노중앙로" },
+        { from: "J", to: "G", dist: 4.2, time: 7.0, road: "대왕판교로" },
+        { from: "E", to: "J", dist: 3.0, time: 4.0, road: "성남대로" }
+      ];
+
+      // 2. State Variables
+      let simulationData = null;
+      let currentStepIndex = 0;
+      let isPlaying = false;
+      let playTimer = null;
+      let playbackSpeed = 1.0;
+      let selectedMetric = 'dist'; // 'dist' or 'time'
+
+      // DOM Elements
+      const selectStart = document.getElementById('select-start');
+      const selectEnd = document.getElementById('select-end');
+      const btnMetricDist = document.getElementById('btn-metric-dist');
+      const btnMetricTime = document.getElementById('btn-metric-time');
+      const btnRun = document.getElementById('btn-run');
+      const btnPause = document.getElementById('btn-pause');
+      const btnStep = document.getElementById('btn-step');
+      const btnReset = document.getElementById('btn-reset');
+      const speedButtons = document.querySelectorAll('.btn-speed');
+
+      // SVG Elements
+      const svgEdgesBase = document.getElementById('svg-edges-base');
+      const svgEdgesActive = document.getElementById('svg-edges-active');
+      const svgEdgesSettled = document.getElementById('svg-edges-settled');
+      const svgEdgesPulse = document.getElementById('svg-edges-pulse');
+      const svgEdgeBadges = document.getElementById('svg-edge-badges');
+      const svgNodes = document.getElementById('svg-nodes');
+      const svgVehicle = document.getElementById('svg-vehicle');
+
+      // 3. Render Static SVG Graph Base
+      function initSvgGraph() {
+        svgEdgesBase.innerHTML = '';
+        svgEdgeBadges.innerHTML = '';
+        svgNodes.innerHTML = '';
+
+        // Draw Base Edges
+        DEFAULT_EDGES.forEach((edge, i) => {
+          const u = DEFAULT_NODES[edge.from];
+          const v = DEFAULT_NODES[edge.to];
+          if (!u || !v) return;
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          line.setAttribute('d', `M ${u.x} ${u.y} L ${v.x} ${v.y}`);
+          line.setAttribute('id', `edge-base-${edge.from}-${edge.to}`);
+          svgEdgesBase.appendChild(line);
+
+          // Edge Weight Badge
+          const midX = (u.x + v.x) / 2;
+          const midY = (u.y + v.y) / 2;
+          const badgeG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          badgeG.setAttribute('id', `badge-edge-${edge.from}-${edge.to}`);
+
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', midX - 22);
+          rect.setAttribute('y', midY - 9);
+          rect.setAttribute('width', 44);
+          rect.setAttribute('height', 18);
+          rect.setAttribute('rx', 9);
+          rect.setAttribute('fill', '#080e1d');
+          rect.setAttribute('stroke', '#242a3a');
+          rect.setAttribute('stroke-width', '1');
+
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', midX);
+          text.setAttribute('y', midY + 4);
+          text.setAttribute('fill', '#87929a');
+          const val = selectedMetric === 'dist' ? `${edge.dist}km` : `${edge.time}분`;
+          text.textContent = val;
+
+          badgeG.appendChild(rect);
+          badgeG.appendChild(text);
+          svgEdgeBadges.appendChild(badgeG);
+        });
+
+        // Draw Nodes
+        Object.keys(DEFAULT_NODES).forEach(nid => {
+          const node = DEFAULT_NODES[nid];
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+          g.setAttribute('id', `node-g-${nid}`);
+          g.setAttribute('class', 'cursor-pointer select-none');
+
+          // Outer halo (evaluating / settled)
+          const halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          halo.setAttribute('id', `node-halo-${nid}`);
+          halo.setAttribute('r', '18');
+          halo.setAttribute('fill', 'none');
+          halo.setAttribute('class', 'transition-all duration-300');
+
+          // Center Circle
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('id', `node-circle-${nid}`);
+          circle.setAttribute('r', '14');
+          circle.setAttribute('fill', '#151b2b');
+          circle.setAttribute('stroke', '#87929a');
+          circle.setAttribute('stroke-width', '2');
+          circle.setAttribute('class', 'transition-all duration-300');
+
+          // Letter Label (A, B, C...)
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('id', `node-text-${nid}`);
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('y', '5');
+          text.setAttribute('font-size', '12');
+          text.setAttribute('font-weight', '700');
+          text.setAttribute('fill', '#dde2f8');
+          text.textContent = nid;
+
+          // Korean Name Tag Box
+          const tagRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          tagRect.setAttribute('id', `node-tag-bg-${nid}`);
+          tagRect.setAttribute('x', -38);
+          tagRect.setAttribute('y', 20);
+          tagRect.setAttribute('width', 76);
+          tagRect.setAttribute('height', 19);
+          tagRect.setAttribute('rx', 4);
+          tagRect.setAttribute('fill', '#080e1d');
+          tagRect.setAttribute('stroke', '#242a3a');
+          tagRect.setAttribute('stroke-width', '1');
+
+          // Korean Name Tag Text
+          const tagText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          tagText.setAttribute('id', `node-tag-text-${nid}`);
+          tagText.setAttribute('text-anchor', 'middle');
+          tagText.setAttribute('x', 0);
+          tagText.setAttribute('y', 33);
+          tagText.setAttribute('font-size', '10');
+          tagText.setAttribute('font-family', 'Geist');
+          tagText.setAttribute('fill', '#bdc8d1');
+          tagText.textContent = node.name;
+
+          g.appendChild(halo);
+          g.appendChild(circle);
+          g.appendChild(text);
+          g.appendChild(tagRect);
+          g.appendChild(tagText);
+          svgNodes.appendChild(g);
+        });
+      }
+
+      // 4. Fetch or Calculate Simulation Data
+      function loadSimulationData(callback) {
+        const payload = {
+          start_node: selectStart.value,
+          end_node: selectEnd.value,
+          metric: selectedMetric
+        };
+
+        document.getElementById('conn-status-label').textContent = 'CALCULATING...';
+
+        // Check if running inside Google Apps Script
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function (data) {
+              handleDataLoaded(data);
+              if (callback) callback();
+            })
+            .withFailureHandler(function (err) {
+              console.warn('Apps script call failed, using client fallback:', err);
+              fallbackLocalCalculation(payload);
+              if (callback) callback();
+            })
+            .getSimulationData(payload);
+        } else {
+          // Direct fetch to FastAPI backend if available, otherwise local client fallback
+          fetch('/api/algorithm/dijkstra', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+            .then(res => res.json())
+            .then(res => {
+              if (res.success && res.data) {
+                handleDataLoaded(res.data);
+              } else {
+                fallbackLocalCalculation(payload);
+              }
+              if (callback) callback();
+            })
+            .catch(() => {
+              fallbackLocalCalculation(payload);
+              if (callback) callback();
+            });
+        }
+      }
+
+      function handleDataLoaded(data) {
+        simulationData = data;
+        currentStepIndex = 0;
+        document.getElementById('conn-status-label').textContent = 'CONNECTED';
+        document.getElementById('source-badge').textContent = data.source ? `Source: ${data.source}` : 'FastAPI/Engine';
+        renderStep(0);
+      }
+
+      // Client-side Fallback Simulation Engine (Always Guaranteed to Work)
+      function fallbackLocalCalculation(payload) {
+        const start = payload.start_node || 'A';
+        const end = payload.end_node || 'G';
+        const metric = payload.metric || 'dist';
+        const unit = metric === 'dist' ? 'km' : '분';
+
+        const nodes = DEFAULT_NODES;
+        const edges = DEFAULT_EDGES;
+        const adj = {};
+        Object.keys(nodes).forEach(n => adj[n] = []);
+        edges.forEach(e => {
+          const w = metric === 'dist' ? e.dist : e.time;
+          adj[e.from].push({ to: e.to, weight: w, road: e.road });
+          adj[e.to].push({ to: e.from, weight: w, road: e.road });
+        });
+
+        const distances = {};
+        const predecessors = {};
+        const settled = {};
+        Object.keys(nodes).forEach(n => {
+          distances[n] = Infinity;
+          predecessors[n] = null;
+          settled[n] = false;
+        });
+        distances[start] = 0;
+
+        let pq = [{ node: start, dist: 0 }];
+        const steps = [];
+        let stepCount = 0;
+        let relaxedCount = 0;
+        let totalOps = Object.keys(nodes).length;
+        let accumUs = 20.0;
+
+        function makeHist(curr) {
+          const sz = metric === 'dist' ? 3.0 : 4.0;
+          const bins = [
+            { range: `0~${sz}${unit}`, count: 0 },
+            { range: `${sz}~${sz*2}${unit}`, count: 0 },
+            { range: `${sz*2}~${sz*3}${unit}`, count: 0 },
+            { range: `${sz*3}~${sz*4}${unit}`, count: 0 },
+            { range: `${sz*4}${unit}+`, count: 0 },
+            { range: "미도달(∞)", count: 0 }
+          ];
+          const nodeBars = [];
+          Object.keys(nodes).forEach(nid => {
+            const d = distances[nid];
+            let st = 'unvisited';
+            if (nid === curr) st = 'evaluating';
+            else if (settled[nid]) st = 'settled';
+            else if (d < Infinity) st = 'queued';
+
+            nodeBars.push({ id: nid, name: nodes[nid].name, distance: d < Infinity ? d : null, status: st });
+            if (d === Infinity) bins[5].count++;
+            else {
+              let idx = Math.min(Math.floor(d / sz), 4);
+              bins[idx].count++;
+            }
+          });
+          return { bins, node_bars: nodeBars };
+        }
+
+        steps.push({
+          step: 0,
+          phase: "INIT",
+          current_node: null,
+          distances: Object.assign({}, distances),
+          predecessors: Object.assign({}, predecessors),
+          settled: [],
+          queue: pq.slice(),
+          relaxed_edge: null,
+          histogram: makeHist(null),
+          step_duration_us: 15.0,
+          accumulated_duration_us: accumUs,
+          complexity_metric: { step_operation: "Initialize: O(V)", total_ops_so_far: totalOps, explored_nodes: 0, relaxed_edges_count: 0 },
+          pseudocode_line: "d[v] = ∞ for all v; d[start] = 0; Q.insert(start, 0)",
+          log_message: `탐색 준비 완료: 출발지 ${nodes[start].name}(${start})`
+        });
+
+        while (pq.length > 0) {
+          pq.sort((a, b) => a.dist - b.dist);
+          const top = pq.shift();
+          const u = top.node;
+          totalOps++;
+          if (settled[u]) continue;
+
+          stepCount++;
+          accumUs += 12.0;
+          const settledArr = Object.keys(settled).filter(k => settled[k]);
+
+          steps.push({
+            step: stepCount,
+            phase: "EXTRACT_MIN",
+            current_node: u,
+            distances: Object.assign({}, distances),
+            predecessors: Object.assign({}, predecessors),
+            settled: settledArr.slice(),
+            queue: pq.map(i => ({ node: i.node, dist: i.dist, prev: predecessors[i.node] })),
+            relaxed_edge: null,
+            histogram: makeHist(u),
+            step_duration_us: 13.0,
+            accumulated_duration_us: accumUs,
+            complexity_metric: { step_operation: "ExtractMin: O(log V)", total_ops_so_far: totalOps, explored_nodes: settledArr.length + 1, relaxed_edges_count: relaxedCount },
+            pseudocode_line: `u = ExtractMin(Q) → ${u} (${top.dist}${unit})`,
+            log_message: `최소 힙에서 ${nodes[u].name}(${u}) 추출 (확정거리: ${top.dist}${unit}).`
+          });
+
+          if (u === end) {
+            settled[u] = true;
+            break;
+          }
+
+          (adj[u] || []).forEach(edge => {
+            const v = edge.to;
+            if (settled[v]) return;
+            totalOps++;
+            const oldDist = distances[v];
+            const newDist = distances[u] + edge.weight;
+            const isRelax = newDist < oldDist;
+
+            if (isRelax) {
+              distances[v] = newDist;
+              predecessors[v] = u;
+              pq.push({ node: v, dist: newDist });
+              relaxedCount++;
+              totalOps++;
+            }
+
+            stepCount++;
+            accumUs += 14.0;
+            steps.push({
+              step: stepCount,
+              phase: isRelax ? "RELAX_SUCCESS" : "RELAX_SKIP",
+              current_node: u,
+              neighbor_node: v,
+              distances: Object.assign({}, distances),
+              predecessors: Object.assign({}, predecessors),
+              settled: Object.keys(settled).filter(k => settled[k]),
+              queue: pq.map(i => ({ node: i.node, dist: i.dist, prev: predecessors[i.node] })),
+              relaxed_edge: { from: u, to: v, weight: edge.weight, road: edge.road, old_dist: oldDist < Infinity ? oldDist : '∞', new_dist: newDist, is_relaxed: isRelax },
+              histogram: makeHist(u),
+              step_duration_us: 14.5,
+              accumulated_duration_us: accumUs,
+              complexity_metric: { step_operation: `Relaxation: d[${v}] = min(${oldDist < Infinity ? oldDist : '∞'}, ${newDist})`, total_ops_so_far: totalOps, explored_nodes: Object.keys(settled).filter(k => settled[k]).length + 1, relaxed_edges_count: relaxedCount },
+              pseudocode_line: isRelax ? `if d[${u}] + w < d[${v}]: d[${v}] ← ${newDist}` : `기존 최단거리 유지`,
+              log_message: isRelax ? `이완 성공: ${nodes[u].name}→${nodes[v].name} (${newDist}${unit})` : `이완 검사 통과: 기존 거리 유지`
+            });
+          });
+          settled[u] = true;
+        }
+
+        // Backtrack
+        const path = [];
+        let curr = end;
+        if (distances[end] < Infinity) {
+          while (curr) { path.push(curr); curr = predecessors[curr]; }
+          path.reverse();
+        }
+
+        stepCount++;
+        steps.push({
+          step: stepCount,
+          phase: "COMPLETE",
+          current_node: null,
+          distances: Object.assign({}, distances),
+          predecessors: Object.assign({}, predecessors),
+          settled: Object.keys(settled).filter(k => settled[k]),
+          queue: [],
+          relaxed_edge: null,
+          histogram: makeHist(null),
+          step_duration_us: 10.0,
+          accumulated_duration_us: accumUs,
+          complexity_metric: { step_operation: "Complete", total_ops_so_far: totalOps, explored_nodes: Object.keys(settled).filter(k => settled[k]).length, relaxed_edges_count: relaxedCount },
+          pseudocode_line: `return ShortestPath(start=${start}, end=${end})`,
+          log_message: `최적 경로 탐색 완료: ${path.join(' → ')}`
+        });
+
+        handleDataLoaded({
+          start_node: start,
+          end_node: end,
+          metric: metric,
+          unit: unit,
+          shortest_path: path,
+          shortest_distance: distances[end] < Infinity ? distances[end] : null,
+          total_steps: steps.length,
+          total_relaxed_count: relaxedCount,
+          total_execution_time_ms: Math.round(accumUs / 10) / 100,
+          total_accumulated_us: accumUs,
+          steps: steps,
+          source: 'client_fallback'
+        });
+      }
+
+      // 5. Render Step Snapshot
+      function renderStep(idx) {
+        if (!simulationData || !simulationData.steps || idx >= simulationData.steps.length) return;
+        currentStepIndex = idx;
+        const step = simulationData.steps[idx];
+        const unit = simulationData.unit || 'km';
+
+        // 1) Telemetry bar
+        document.getElementById('current-step-display').textContent = `Step #${step.step} / ${simulationData.total_steps - 1}`;
+        document.getElementById('current-phase-display').textContent = step.phase;
+        document.getElementById('metric-latency').textContent = `${step.accumulated_duration_us || 0} μs`;
+        document.getElementById('metric-ops').textContent = `${step.complexity_metric.total_ops_so_far || 0} ops`;
+
+        // 2) HUD
+        const progressPct = Math.round((step.step / Math.max(1, simulationData.total_steps - 1)) * 100);
+        document.getElementById('hud-progress-text').textContent = `${progressPct}% 탐색`;
+        document.getElementById('hud-progress-bar').style.width = `${progressPct}%`;
+        document.getElementById('hud-current-node').textContent = step.current_node ? `${DEFAULT_NODES[step.current_node]?.name || step.current_node}` : '대기';
+        document.getElementById('hud-next-action').textContent = step.log_message || '';
+
+        const endDist = step.distances[simulationData.end_node];
+        document.getElementById('hud-distance').textContent = endDist !== 'inf' && endDist < Infinity ? `${endDist} ${unit}` : '탐색 중...';
+
+        // 3) Vehicle Marker Movement
+        if (step.current_node && DEFAULT_NODES[step.current_node]) {
+          const n = DEFAULT_NODES[step.current_node];
+          svgVehicle.setAttribute('transform', `translate(${n.x}, ${n.y})`);
+          svgVehicle.style.opacity = '1';
+        }
+
+        // 4) Update SVG Nodes
+        const settledSet = new Set(step.settled || []);
+        Object.keys(DEFAULT_NODES).forEach(nid => {
+          const circle = document.getElementById(`node-circle-${nid}`);
+          const halo = document.getElementById(`node-halo-${nid}`);
+          const text = document.getElementById(`node-text-${nid}`);
+          const tagBg = document.getElementById(`node-tag-bg-${nid}`);
+          const tagText = document.getElementById(`node-tag-text-${nid}`);
+          if (!circle || !text) return;
+
+          const isCurrent = step.current_node === nid;
+          const isSettled = settledSet.has(nid);
+          const dVal = step.distances[nid];
+          const isQueued = dVal !== 'inf' && dVal < Infinity;
+
+          if (isCurrent) {
+            circle.setAttribute('fill', '#f59e0b');
+            circle.setAttribute('stroke', '#ffddb8');
+            circle.setAttribute('stroke-width', '3');
+            text.setAttribute('fill', '#472a00');
+            halo.setAttribute('stroke', '#f59e0b');
+            halo.setAttribute('stroke-width', '4');
+            halo.setAttribute('class', 'animate-ping opacity-50');
+            tagBg.setAttribute('stroke', '#f59e0b');
+            tagText.setAttribute('fill', '#ffddb8');
+          } else if (isSettled) {
+            circle.setAttribute('fill', '#00a572');
+            circle.setAttribute('stroke', '#6ffbbe');
+            circle.setAttribute('stroke-width', '2');
+            text.setAttribute('fill', '#002113');
+            halo.setAttribute('stroke', 'none');
+            halo.setAttribute('class', '');
+            tagBg.setAttribute('stroke', '#4edea3');
+            tagText.setAttribute('fill', '#4edea3');
+          } else if (isQueued) {
+            circle.setAttribute('fill', '#151b2b');
+            circle.setAttribute('stroke', '#38bdf8');
+            circle.setAttribute('stroke-width', '2');
+            text.setAttribute('fill', '#8ed5ff');
+            halo.setAttribute('stroke', 'none');
+            halo.setAttribute('class', '');
+            tagBg.setAttribute('stroke', '#38bdf8');
+            tagText.setAttribute('fill', '#8ed5ff');
+          } else {
+            circle.setAttribute('fill', '#151b2b');
+            circle.setAttribute('stroke', '#87929a');
+            circle.setAttribute('stroke-width', '1.5');
+            text.setAttribute('fill', '#dde2f8');
+            halo.setAttribute('stroke', 'none');
+            halo.setAttribute('class', '');
+            tagBg.setAttribute('stroke', '#242a3a');
+            tagText.setAttribute('fill', '#87929a');
+          }
+        });
+
+        // 5) Update SVG Edges
+        svgEdgesActive.innerHTML = '';
+        svgEdgesSettled.innerHTML = '';
+        svgEdgesPulse.innerHTML = '';
+
+        // Relaxing edge highlight
+        if (step.relaxed_edge) {
+          const re = step.relaxed_edge;
+          const u = DEFAULT_NODES[re.from];
+          const v = DEFAULT_NODES[re.to];
+          if (u && v) {
+            const activeLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            activeLine.setAttribute('d', `M ${u.x} ${u.y} L ${v.x} ${v.y}`);
+            activeLine.setAttribute('stroke', re.is_relaxed ? '#f59e0b' : '#38bdf8');
+            activeLine.setAttribute('stroke-width', '4');
+            activeLine.setAttribute('stroke-dasharray', '8,6');
+            activeLine.setAttribute('class', 'animate-pulse');
+            svgEdgesActive.appendChild(activeLine);
+          }
+        }
+
+        // Settled Path Drawing if Complete or in progress
+        if (step.phase === 'COMPLETE' && simulationData.shortest_path) {
+          const sp = simulationData.shortest_path;
+          for (let i = 0; i < sp.length - 1; i++) {
+            const u = DEFAULT_NODES[sp[i]];
+            const v = DEFAULT_NODES[sp[i+1]];
+            if (u && v) {
+              const pLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+              pLine.setAttribute('d', `M ${u.x} ${u.y} L ${v.x} ${v.y}`);
+              svgEdgesSettled.appendChild(pLine);
+
+              const pulseLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+              pulseLine.setAttribute('d', `M ${u.x} ${u.y} L ${v.x} ${v.y}`);
+              svgEdgesPulse.appendChild(pulseLine);
+            }
+          }
+        }
+
+        // 6) Render Histogram Bins & Node Bars
+        renderHistogram(step.histogram);
+
+        // 7) Render Terminal Pseudocode
+        document.getElementById('terminal-step-badge').textContent = `Execution Step #${step.step} • ${step.phase}`;
+        document.getElementById('terminal-ops-badge').textContent = step.complexity_metric.step_operation;
+        document.getElementById('terminal-code-body').innerHTML = `
+          <span class="text-tertiary font-bold">> ${step.pseudocode_line || ''}</span><br/>
+          <span class="text-on-surface">> ${step.log_message || ''}</span>
+        `;
+
+        // 8) Render Min-Heap Ribbon
+        renderHeapRibbon(step.queue, step.current_node);
+
+        // 9) Render Distance Vector Table
+        renderDistanceTable(step);
+
+        // 10) Telemetry Cards
+        const settledCount = (step.settled || []).length;
+        const totalNodes = Object.keys(DEFAULT_NODES).length;
+        document.getElementById('telemetry-settled').textContent = `${settledCount} / ${totalNodes}`;
+        const pct = Math.round((settledCount / totalNodes) * 100);
+        document.getElementById('telemetry-settled-pct').textContent = `(${pct}%)`;
+        document.getElementById('telemetry-settled-bar').style.width = `${pct}%`;
+
+        document.getElementById('telemetry-relaxed-count').textContent = `${step.complexity_metric.relaxed_edges_count || 0} 회`;
+        document.getElementById('telemetry-step-time').textContent = `${step.step_duration_us || 0}`;
+        document.getElementById('telemetry-queue-size').textContent = `${(step.queue || []).length} nodes`;
+      }
+
+      // Render Histogram Component
+      function renderHistogram(hist) {
+        if (!hist) return;
+        const binsContainer = document.getElementById('histogram-bins-container');
+        const labelsContainer = document.getElementById('histogram-labels-container');
+        const nodeBarsContainer = document.getElementById('node-bars-container');
+
+        binsContainer.innerHTML = '';
+        labelsContainer.innerHTML = '';
+        nodeBarsContainer.innerHTML = '';
+
+        const maxCount = Math.max(...hist.bins.map(b => b.count), 1);
+
+        hist.bins.forEach(b => {
+          const heightPct = Math.round((b.count / maxCount) * 85) + 12; // min height 12%
+          const col = document.createElement('div');
+          col.className = 'flex flex-col items-center justify-end h-full';
+          col.innerHTML = `
+            <span class="text-[10px] font-code-inline font-bold text-on-surface mb-1">${b.count}</span>
+            <div class="w-full bg-gradient-to-t from-primary/30 to-primary rounded-t transition-all duration-300 border-t border-primary" style="height: ${b.count > 0 ? heightPct : 6}%"></div>
+          `;
+          binsContainer.appendChild(col);
+
+          const lbl = document.createElement('div');
+          lbl.className = 'truncate font-code-inline';
+          lbl.textContent = b.range;
+          labelsContainer.appendChild(lbl);
+        });
+
+        // Node Bars Breakdown
+        (hist.node_bars || []).forEach(item => {
+          const row = document.createElement('div');
+          row.className = 'flex items-center gap-3 text-xs';
+
+          let statusClass = 'text-outline-variant';
+          let barBg = 'bg-surface-container-high';
+          let distText = '∞ (미탐색)';
+
+          if (item.status === 'evaluating') {
+            statusClass = 'text-tertiary font-bold';
+            barBg = 'bg-tertiary';
+            distText = `${item.distance} ${simulationData.unit} [탐색중]`;
+          } else if (item.status === 'settled') {
+            statusClass = 'text-secondary font-bold';
+            barBg = 'bg-secondary';
+            distText = `${item.distance} ${simulationData.unit} [확정]`;
+          } else if (item.status === 'queued') {
+            statusClass = 'text-primary font-semibold';
+            barBg = 'bg-primary';
+            distText = `${item.distance} ${simulationData.unit} [대기열]`;
+          }
+
+          const barWidth = item.distance !== null ? Math.min(Math.round((item.distance / 15) * 100), 100) : 5;
+
+          row.innerHTML = `
+            <span class="w-16 font-semibold ${statusClass} truncate">${item.id} (${item.name.slice(0,3)})</span>
+            <div class="flex-1 bg-surface-container h-2 rounded-full overflow-hidden border border-surface-container-high">
+              <div class="${barBg} h-full rounded-full transition-all duration-300" style="width: ${barWidth}%"></div>
+            </div>
+            <span class="w-24 text-right font-code-inline text-[11px] ${statusClass}">${distText}</span>
+          `;
+          nodeBarsContainer.appendChild(row);
+        });
+
+        document.getElementById('hist-finite-count').textContent = `${hist.node_bars.filter(n => n.distance !== null).length} / 9 노드 도달`;
+      }
+
+      // Render Priority Queue Ribbon
+      function renderHeapRibbon(queue, currNode) {
+        const container = document.getElementById('heap-ribbon-container');
+        container.innerHTML = '';
+
+        if (!queue || queue.length === 0) {
+          container.innerHTML = `<span class="text-xs text-outline font-label-sm">힙이 비어 있습니다 (추출 완료).</span>`;
+          return;
+        }
+
+        queue.forEach((item, idx) => {
+          const isRoot = idx === 0;
+          const chip = document.createElement('div');
+          chip.className = `flex items-center gap-1.5 px-3 py-1 rounded text-xs font-code-inline flex-shrink-0 border transition-all ${
+            isRoot 
+              ? 'bg-tertiary-container/30 border-tertiary text-tertiary font-bold shadow-md' 
+              : 'bg-surface-container border-surface-container-high text-on-surface'
+          }`;
+
+          chip.innerHTML = `
+            <span class="material-symbols-outlined text-[14px] ${isRoot ? 'text-tertiary' : 'text-outline'}">
+              ${isRoot ? 'output' : 'schedule'}
+            </span>
+            <span>(${item.node}, ${item.dist}${simulationData.unit || 'km'}, prev:${item.prev || '-'})</span>
+            ${isRoot ? '<span class="text-[9px] uppercase bg-tertiary/20 text-tertiary px-1 rounded font-bold">NEXT</span>' : ''}
+          `;
+          container.appendChild(chip);
+
+          if (idx < queue.length - 1) {
+            const arrow = document.createElement('span');
+            arrow.className = 'text-outline-variant text-xs';
+            arrow.textContent = '→';
+            container.appendChild(arrow);
+          }
+        });
+      }
+
+      // Render Distance Table
+      function renderDistanceTable(step) {
+        const tbody = document.getElementById('distance-table-body');
+        tbody.innerHTML = '';
+        const settledSet = new Set(step.settled || []);
+        const unit = simulationData.unit || 'km';
+
+        Object.keys(DEFAULT_NODES).forEach(nid => {
+          const node = DEFAULT_NODES[nid];
+          const isCurrent = step.current_node === nid;
+          const isSettled = settledSet.has(nid);
+          const dVal = step.distances[nid];
+          const prev = step.predecessors[nid];
+
+          let rowBg = '';
+          let statusBadge = '';
+          let dDisplay = dVal === 'inf' || dVal >= Infinity ? '∞' : `${dVal} ${unit}`;
+
+          if (isCurrent) {
+            rowBg = 'bg-tertiary-container/15';
+            statusBadge = `<span class="px-2 py-0.5 rounded bg-tertiary/20 text-tertiary text-[10px] font-bold">추출 연산 중</span>`;
+          } else if (isSettled) {
+            rowBg = 'bg-secondary-container/10';
+            statusBadge = `<span class="px-2 py-0.5 rounded bg-secondary-container/30 text-secondary text-[10px] font-bold">확정 (Settled)</span>`;
+          } else if (dVal !== 'inf' && dVal < Infinity) {
+            rowBg = 'bg-primary/5';
+            statusBadge = `<span class="px-2 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-bold">대기열 (Queued)</span>`;
+          } else {
+            statusBadge = `<span class="px-2 py-0.5 rounded bg-surface-container-high text-outline text-[10px]">미탐색 (Unvisited)</span>`;
+          }
+
+          // Backtrack path trace string
+          let pathTrace = nid;
+          let temp = prev;
+          while (temp) {
+            pathTrace = `${temp} → ${pathTrace}`;
+            temp = step.predecessors[temp];
+          }
+
+          const tr = document.createElement('tr');
+          tr.className = `${rowBg} transition-colors`;
+          tr.innerHTML = `
+            <td class="py-2 px-3 font-bold text-on-surface flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full ${isSettled ? 'bg-secondary' : isCurrent ? 'bg-tertiary' : 'bg-outline-variant'}"></span>
+              <span>Node ${nid} (${node.name})</span>
+            </td>
+            <td class="py-2 px-3 font-bold ${isSettled ? 'text-secondary' : isCurrent ? 'text-tertiary' : 'text-on-surface'}">${dDisplay}</td>
+            <td class="py-2 px-3 text-on-surface-variant">${prev ? `Node ${prev}` : '-'}</td>
+            <td class="py-2 px-3">${statusBadge}</td>
+            <td class="py-2 px-3 text-right text-on-surface-variant font-code-inline">${pathTrace}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // 6. Playback Control Loop
+      function playNextStep() {
+        if (!isPlaying || !simulationData) return;
+        if (currentStepIndex < simulationData.steps.length - 1) {
+          renderStep(currentStepIndex + 1);
+          const delay = Math.max(150, Math.round(900 / playbackSpeed));
+          playTimer = setTimeout(playNextStep, delay);
+        } else {
+          pauseSimulation();
+        }
+      }
+
+      function startSimulation() {
+        if (!simulationData) {
+          loadSimulationData(() => {
+            isPlaying = true;
+            updatePlayButtons();
+            playNextStep();
+          });
+          return;
+        }
+
+        if (currentStepIndex >= simulationData.steps.length - 1) {
+          currentStepIndex = 0;
+          renderStep(0);
+        }
+
+        isPlaying = true;
+        updatePlayButtons();
+        playNextStep();
+      }
+
+      function pauseSimulation() {
+        isPlaying = false;
+        if (playTimer) clearTimeout(playTimer);
+        updatePlayButtons();
+      }
+
+      function updatePlayButtons() {
+        if (isPlaying) {
+          btnRun.classList.remove('bg-primary', 'text-on-primary');
+          btnRun.classList.add('bg-secondary-container', 'text-on-secondary');
+          btnRun.querySelector('span:last-child').textContent = '연산 중...';
+        } else {
+          btnRun.classList.remove('bg-secondary-container', 'text-on-secondary');
+          btnRun.classList.add('bg-primary', 'text-on-primary');
+          btnRun.querySelector('span:last-child').textContent = '시작';
+        }
+      }
+
+      // Event Listeners
+      btnRun.addEventListener('click', startSimulation);
+      btnPause.addEventListener('click', pauseSimulation);
+      btnStep.addEventListener('click', () => {
+        pauseSimulation();
+        if (!simulationData) {
+          loadSimulationData(() => { renderStep(0); });
+        } else if (currentStepIndex < simulationData.steps.length - 1) {
+          renderStep(currentStepIndex + 1);
+        }
+      });
+
+      btnReset.addEventListener('click', () => {
+        pauseSimulation();
+        if (simulationData) {
+          currentStepIndex = 0;
+          renderStep(0);
+        }
+      });
+
+      btnMetricDist.addEventListener('click', () => {
+        if (selectedMetric === 'dist') return;
+        selectedMetric = 'dist';
+        btnMetricDist.className = "px-2.5 py-1 rounded bg-primary-container text-on-primary-container font-bold transition-all";
+        btnMetricTime.className = "px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface transition-all";
+        initSvgGraph();
+        pauseSimulation();
+        loadSimulationData();
+      });
+
+      btnMetricTime.addEventListener('click', () => {
+        if (selectedMetric === 'time') return;
+        selectedMetric = 'time';
+        btnMetricTime.className = "px-2.5 py-1 rounded bg-primary-container text-on-primary-container font-bold transition-all";
+        btnMetricDist.className = "px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface transition-all";
+        initSvgGraph();
+        pauseSimulation();
+        loadSimulationData();
+      });
+
+      selectStart.addEventListener('change', () => {
+        pauseSimulation();
+        loadSimulationData();
+      });
+
+      selectEnd.addEventListener('change', () => {
+        pauseSimulation();
+        loadSimulationData();
+      });
+
+      speedButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          speedButtons.forEach(b => {
+            b.classList.remove('bg-surface-container-high', 'text-primary', 'font-bold');
+            b.classList.add('text-on-surface-variant');
+          });
+          btn.classList.add('bg-surface-container-high', 'text-primary', 'font-bold');
+          btn.classList.remove('text-on-surface-variant');
+          playbackSpeed = parseFloat(btn.getAttribute('data-speed')) || 1.0;
+        });
+      });
+
+      // Initialize on Load
+      initSvgGraph();
+      loadSimulationData();
+    })();
+  </script>
+</body>
+</html>

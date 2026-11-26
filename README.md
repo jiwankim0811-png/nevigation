@@ -1,6 +1,17 @@
 # Dijkstra Navigation Graph Visualizer (`nevigation`)
 
-다익스트라 알고리즘의 동작 과정을 직관적인 시각화 및 실시간 히스토그램 스냅샷, 시간 복잡도($O((V + E) \log V)$) 분석 메트릭과 함께 제공하는 웹 애플리케이션입니다.
+다익스트라 알고리즘의 동작 과정을 직관적인 시각화 및 실시간 히스토그램 스냅샷, 시간 복잡도($O((V + E) \log V)$) 분석 메트릭과 함께 제공하는 풀스택 웹 애플리케이션입니다.
+
+---
+
+## 🌐 실시간 배포 서비스 엔드포인트
+
+| 서비스 구분 | 호스팅 플랫폼 | 상태 | 엔드포인트 URL |
+|---|---|:---:|---|
+| **백엔드 API 서버 (FastAPI)** | Google Cloud Run (`us-central1`) | 🟢 `Active (200 OK)` | [https://nevigation-server-epaw6mtefq-uc.a.run.app](https://nevigation-server-epaw6mtefq-uc.a.run.app) |
+| **API 헬스체크** | Google Cloud Run | 🟢 `Healthy` | [https://nevigation-server-epaw6mtefq-uc.a.run.app/health](https://nevigation-server-epaw6mtefq-uc.a.run.app/health) |
+| **시뮬레이터 웹앱 (`nevigation_graph`)** | Google Apps Script (`@3`) | 🟢 `Live` | [https://script.google.com/macros/s/AKfycbzWhm_WRL1OM7INsDg9LezU9tiZZKCkEkRuvQdFzX1L7Wz9ftHnzhl-0OFmXkmK5Et6/exec](https://script.google.com/macros/s/AKfycbzWhm_WRL1OM7INsDg9LezU9tiZZKCkEkRuvQdFzX1L7Wz9ftHnzhl-0OFmXkmK5Et6/exec) |
+| **시뮬레이터 웹앱 (`gas`)** | Google Apps Script (`@4`) | 🟢 `Live` | [https://script.google.com/macros/s/AKfycbwt8G-wGQJSFTz3yl6L5TP_0EPgoBX0Jx9FGItCPHmDD9D9vMiWZP5h3Q38ebLK8tiLMQ/exec](https://script.google.com/macros/s/AKfycbwt8G-wGQJSFTz3yl6L5TP_0EPgoBX0Jx9FGItCPHmDD9D9vMiWZP5h3Q38ebLK8tiLMQ/exec) |
 
 ---
 
@@ -8,6 +19,9 @@
 
 ```text
 nevigation/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml           # GitHub Actions Cloud Run CI/CD 파이프라인
 ├── .gitignore                   # .env 및 민감/임시 파일 철저 격리
 ├── README.md                    # 프로젝트 문서
 ├── package.json
@@ -35,48 +49,12 @@ nevigation/
 
 ---
 
-## 🔒 보안 및 설정 점검
+## 🔒 보안 및 CI/CD 연동
 
-### 1. `.gitignore`
-- `.env`, `.env.*`, `*.env` 가 철저하게 등록되어 환경 변수 및 Google Gemini API Key가 저장소에 절대 노출되지 않도록 설정되었습니다.
-- `.clasprc.json`, `node_modules/`, `algorithm-class-env/`, `*.log`, `__pycache__/` 등이 배제되어 있습니다.
-
-### 2. `fasion/server/Dockerfile`
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
-ENV PORT=8080
-EXPOSE 8080
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
-```
-- Cloud Run 호환 포트(`8080`) 및 `PORT` 환경 변수를 지원하도록 설계되었습니다.
-
----
-
-## 🚀 주요 기능
-
-1. **다익스트라 알고리즘 실시간 탐색 시각화**
-   - 수도권 남부 거점(강남역, 양재역, 판교역, 테크노밸리 등) 노드 간 최단 경로 탐색.
-   - 거리(km) 및 소요 시간(분) 가중치 전환 지원.
-
-2. **단계별 히스토그램(Histogram) 데이터 생성**
-   - 탐색 매 스텝마다 최단거리 구간별 빈도수 및 노드별 확정 상태 스냅샷 반환.
-
-3. **시간 복잡도 & 연산 지연시간 메타데이터**
-   - 이론적 복잡도: $O((V + E) \log V)$
-   - 누적 연산 수(ops), 간선 이완(relaxation) 성공 횟수, 단계별 마이크로초($\mu s$) 단위 지연시간 실시간 표기.
-
-4. **우선순위 큐(Min-Heap) 리본 & 의사코드 터미널**
-   - `[Node, Dist, Prev]` 힙 추출/삽입 시각화 및 실행 라인 하이라이트.
-
----
-
-## 🌐 Google Apps Script 웹앱 실행 URL
-
-- **`nevigation_graph` 배포 URL**:
-  - `https://script.google.com/macros/s/AKfycbz7J-1WxY0j34dV4HQiRnSCozMrmC8rTgXCq_QnFUEJ_8sg0tyLn_rJ1g_MLjXk4U-p6w/exec`
-- **`gas` 배포 URL**:
-  - `https://script.google.com/macros/s/AKfycbxAKfCDe-OO3dPwfQSq6nfEsOHgRs5RQ-q-FFFXPWNJ9WX7yJ0j6dzQKAKjRNi9i6Y-LQ/exec`
+1. **GitHub Secrets 연동:**
+   - `GCP_SA_KEY`: Cloud Run 및 Artifact Registry 권한을 보유한 `github-actions-sa` 인증 키
+   - `GCP_PROJECT_ID`: `thetime-1`
+   - `GEMINI_API_KEY`: Google AI Studio API 키
+   - `GAS_WEBHOOK_URL`: 배포 완료 시 GAS로 신규 서비스 URL 자동 전송 웹훅
+2. **자동 스모크 테스트 & 자가 치유:**
+   - Cloud Run 배포 즉시 `${{ steps.deploy.outputs.url }}/health`로 HTTP `200 OK` 검증.

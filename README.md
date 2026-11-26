@@ -10,8 +10,8 @@
 |---|---|:---:|---|
 | **백엔드 API 서버 (FastAPI)** | Google Cloud Run (`us-central1`) | 🟢 `Active (200 OK)` | [https://nevigation-server-epaw6mtefq-uc.a.run.app](https://nevigation-server-epaw6mtefq-uc.a.run.app) |
 | **API 헬스체크** | Google Cloud Run | 🟢 `Healthy` | [https://nevigation-server-epaw6mtefq-uc.a.run.app/health](https://nevigation-server-epaw6mtefq-uc.a.run.app/health) |
-| **시뮬레이터 웹앱 (`nevigation_graph`)** | Google Apps Script (`@4`) | 🟢 `Live` | [https://script.google.com/macros/s/AKfycbyIrU4oOcIAcyWaTKG06BZzS24Wbg1F4gZixsmW48XrfEY_d07dtaGD_Ryd8uRmMa9t3Q/exec](https://script.google.com/macros/s/AKfycbyIrU4oOcIAcyWaTKG06BZzS24Wbg1F4gZixsmW48XrfEY_d07dtaGD_Ryd8uRmMa9t3Q/exec) |
-| **시뮬레이터 웹앱 (`gas`)** | Google Apps Script (`@5`) | 🟢 `Live` | [https://script.google.com/macros/s/AKfycbwi3_OT2XKg2KzgTQD6IE_WzvIRF2-t8-ZpbxiXmTZTdbZCexncT_i6g478C6J7BZqaSg/exec](https://script.google.com/macros/s/AKfycbwi3_OT2XKg2KzgTQD6IE_WzvIRF2-t8-ZpbxiXmTZTdbZCexncT_i6g478C6J7BZqaSg/exec) |
+| **시뮬레이터 웹앱 (`nevigation_graph`)** | Google Apps Script (`@5`) | 🟢 `Live` | [https://script.google.com/macros/s/AKfycbyHsQiyvUA2otXbn5JTR26Gfc9HyUsGPQfR_HS_RMF6PgDkkEJDevvdCcUY0ksar5u3rw/exec](https://script.google.com/macros/s/AKfycbyHsQiyvUA2otXbn5JTR26Gfc9HyUsGPQfR_HS_RMF6PgDkkEJDevvdCcUY0ksar5u3rw/exec) |
+| **시뮬레이터 웹앱 (`gas`)** | Google Apps Script (`@6`) | 🟢 `Live` | [https://script.google.com/macros/s/AKfycbxZboI-uQ1KR6FHrl8fWv3GMhLWQLjMZOGN5dyBabcEZS4itOuRv9r_G4YaxFGYxbwyRw/exec](https://script.google.com/macros/s/AKfycbxZboI-uQ1KR6FHrl8fWv3GMhLWQLjMZOGN5dyBabcEZS4itOuRv9r_G4YaxFGYxbwyRw/exec) |
 
 ---
 
